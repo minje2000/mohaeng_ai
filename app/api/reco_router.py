@@ -3,14 +3,14 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends
 from fastapi.responses import JSONResponse
 from typing import Optional
 
-from app.core.security import verify_api_key
+from app.core.security import require_internal_api_key
 from app.schemas.reco_schema import RecommendRequest, EmbeddingRequest, EmbeddingResponse
 from app.services import reco_service
 
 router = APIRouter(prefix="/ai", tags=["AI 추천"])
 
 
-@router.post("/recommend", dependencies=[Depends(verify_api_key)])
+@router.post("/recommend", dependencies=[Depends(require_internal_api_key)])
 def recommend(req: RecommendRequest):
     """행사 AI 추천 - 유사도 계산 후 상위 6개 event_id 반환"""
     try:
@@ -21,7 +21,7 @@ def recommend(req: RecommendRequest):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
-@router.post("/embedding", dependencies=[Depends(verify_api_key)])
+@router.post("/embedding", dependencies=[Depends(require_internal_api_key)])
 def create_embedding(req: EmbeddingRequest):
     """단일 텍스트 임베딩 생성 (행사 등록 시 Spring Boot에서 호출)"""
     try:
@@ -31,7 +31,7 @@ def create_embedding(req: EmbeddingRequest):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
-@router.post("/suggest-tags", dependencies=[Depends(verify_api_key)])
+@router.post("/suggest-tags", dependencies=[Depends(require_internal_api_key)])
 async def suggest_tags(
     title: str = Form(...),
     simple_explain: str = Form(...),
