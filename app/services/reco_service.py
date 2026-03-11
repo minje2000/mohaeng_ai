@@ -1,19 +1,15 @@
 from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
-import re
 import os
-import google.generativeai as genai
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
 
 # ── 모델 로딩 및 API 설정 ──────────────────────────────────
-# 1. 태그 추천용 임베딩 모델 (기존 동일)
 embedding_model = SentenceTransformer('jhgan/ko-sroberta-multitask')
-
-# 2. 한 줄 요약 창작용 Gemini 클라이언트 설정 (변경된 부분!)
-# 실제 운영 환경에서는 환경 변수(os.environ)로 관리하는 것을 권장합니다.
-os.environ["GEMINI_API_KEY"] = "AIzaSyCt2TlmBuiOCvSGxhe7R5Zk7ZjILUNRS9E"
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-llm_model = genai.GenerativeModel('gemini-1.5-flash') # 빠르고 넉넉한 무료 할당량을 제공하는 모델
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ── 카테고리 / 주제 / 해시태그 목록 ──────────────────────────
 CATEGORIES = [
@@ -35,7 +31,7 @@ CATEGORIES = [
 ]
 
 TOPICS = [
-    {"id": 1,  "name": "IT",           "desc": "IT 기술 소프트웨어 개발 프로그래밍 AI 인공지능 데이터"},
+    {"id": 1,  "name": "IT",            "desc": "IT 기술 소프트웨어 개발 프로그래밍 AI 인공지능 데이터"},
     {"id": 2,  "name": "비즈니스 창업", "desc": "비즈니스 창업 스타트업 사업 기업가"},
     {"id": 3,  "name": "마케팅 브랜딩", "desc": "마케팅 브랜딩 광고 홍보 SNS 콘텐츠"},
     {"id": 4,  "name": "디자인 아트",   "desc": "디자인 아트 예술 그래픽 UI 창작"},
@@ -141,7 +137,7 @@ def recommend_events(user_text: str, events: list, user_region_ids: list = []) -
         region_pref[prefix] = region_pref.get(prefix, 0) + 1
     total = sum(region_pref.values()) or 1
     region_pref = {k: (v / total) * 0.3 for k, v in region_pref.items()}
-    
+
     scored = []
     for e in events:
         try:
@@ -167,11 +163,10 @@ def recommend_events(user_text: str, events: list, user_region_ids: list = []) -
     return [int(eid) for _, eid in scored[:6]]
 
 
-# ── 한줄 설명 생성 (Gemini 연동으로 변경!) ─────────────────────────
+# ── 한줄 설명 생성 (GPT 연동) ──────────────────────────────────
 def _make_simple_explain_with_llm(title: str, description: str, category_name: str) -> str:
-    """Gemini API를 사용하여 맥락에 맞는 감성적인 한 줄 요약을 생성합니다."""
-    
-    # 설명이 너무 짧거나 없을 경우를 대비한 기본 폴백(Fallback)
+    """GPT API를 사용하여 맥락에 맞는 감성적인 한 줄 요약을 생성합니다."""
+
     if not description or len(description.strip()) < 5:
         return f"{title}에서 특별한 경험을 만나보세요."
 
@@ -188,13 +183,13 @@ def _make_simple_explain_with_llm(title: str, description: str, category_name: s
 출력: (다른 부연 설명 없이 오직 생성된 한 줄 카피만 출력할 것)
 """
     try:
-        # Gemini API 호출
-        response = llm_model.generate_content(prompt)
-        # 결과값 정리 후 반환
-        return response.text.strip().replace('"', '').replace("'", "")
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content.strip().replace('"', '').replace("'", "")
     except Exception as e:
-        print(f"Gemini API 호출 실패: {e}")
-        # API 오류 발생 시 템플릿 기반으로 돌아가는 안전장치
+        print(f"GPT API 호출 실패: {e}")
         return f"{title}에서 잊지 못할 시간을 만들어보세요."
 
 
@@ -218,10 +213,9 @@ def suggest_tags(title: str, simple_explain: str, image_bytes: bytes = None) -> 
     )
     topic_ids = [t["id"] for score, t in topic_scores if score >= TOPIC_THRESHOLD][:5]
     if not topic_ids:
-        # 그래도 0.3 넘는 게 없다면 강제로 상위 3개를 가져옴
         topic_ids = [t["id"] for score, t in topic_scores][:3]
 
-    # ── 해시태그: 유사도 커트라인을 0.3으로 낮춤 (최대 5개, 최소 1개 보장)
+    # ── 해시태그
     HASHTAG_THRESHOLD = 0.4
     hashtag_sims = util.cos_sim(query_vec, _get_hashtag_embeddings())[0]
     hashtag_scores = sorted(
@@ -230,10 +224,9 @@ def suggest_tags(title: str, simple_explain: str, image_bytes: bytes = None) -> 
     )
     hashtag_names = [h["name"] for score, h in hashtag_scores if score >= HASHTAG_THRESHOLD][:5]
     if not hashtag_names:
-        # 그래도 0.3 넘는 게 없다면 강제로 상위 3개를 가져옴
         hashtag_names = [h["name"] for score, h in hashtag_scores][:3]
 
-    # ── 한줄 설명 생성 (Gemini 호출)
+    # ── 한줄 설명 생성 (GPT 호출)
     generated_explain = _make_simple_explain_with_llm(title, simple_explain, category_name)
 
     print(f"[AI태그추천] '{title}'")
