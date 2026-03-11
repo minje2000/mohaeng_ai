@@ -1,11 +1,19 @@
 from sentence_transformers import SentenceTransformer, util
 import torch
 import numpy as np
-from PIL import Image
-import io
+import re
+import os
+import google.generativeai as genai
 
-# ── 모델 로딩 (서버 시작 시 1회) ─────────────────────────────
+# ── 모델 로딩 및 API 설정 ──────────────────────────────────
+# 1. 태그 추천용 임베딩 모델 (기존 동일)
 embedding_model = SentenceTransformer('jhgan/ko-sroberta-multitask')
+
+# 2. 한 줄 요약 창작용 Gemini 클라이언트 설정 (변경된 부분!)
+# 실제 운영 환경에서는 환경 변수(os.environ)로 관리하는 것을 권장합니다.
+os.environ["GEMINI_API_KEY"] = "AIzaSyCt2TlmBuiOCvSGxhe7R5Zk7ZjILUNRS9E"
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+llm_model = genai.GenerativeModel('gemini-1.5-flash') # 빠르고 넉넉한 무료 할당량을 제공하는 모델
 
 # ── 카테고리 / 주제 / 해시태그 목록 ──────────────────────────
 CATEGORIES = [
@@ -87,7 +95,7 @@ HASHTAGS = [
     {"id": 30, "name": "친환경적인",    "desc": "친환경 자연 녹색 에코 생태"},
 ]
 
-# ── 임베딩 캐시 (서버 시작 시 미리 계산) ─────────────────────
+# ── 임베딩 캐시 ───────────────────────────────────────────────
 _cat_embeddings = None
 _topic_embeddings = None
 _hashtag_embeddings = None
@@ -113,7 +121,6 @@ def _get_hashtag_embeddings():
         _hashtag_embeddings = embedding_model.encode(texts, convert_to_tensor=True)
     return _hashtag_embeddings
 
-
 # ── 임베딩 (추천용) ───────────────────────────────────────────
 def get_embedding(text: str) -> str:
     text = text[:512]
@@ -125,89 +132,114 @@ def cosine_similarity(v1, v2):
     b = np.array(v2)
     return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-9))
 
-def recommend_events(user_text: str, events: list) -> list:
+def recommend_events(user_text: str, events: list, user_region_ids: list = []) -> list:
     user_vec = [float(x) for x in get_embedding(user_text).split(",")]
+
+    region_pref = {}
+    for rid in user_region_ids:
+        prefix = str(rid)[:2]
+        region_pref[prefix] = region_pref.get(prefix, 0) + 1
+    total = sum(region_pref.values()) or 1
+    region_pref = {k: (v / total) * 0.3 for k, v in region_pref.items()}
+    
     scored = []
     for e in events:
         try:
             embedding_str = e.embedding if hasattr(e, 'embedding') else e["embedding"]
             event_id = e.event_id if hasattr(e, 'event_id') else e["event_id"]
-            # 따옴표 제거
+            region_id = e.region_id if hasattr(e, 'region_id') else e.get("region_id")
+
             embedding_str = embedding_str.strip().strip('"')
             ev = [float(x.strip().strip('"')) for x in embedding_str.split(",")]
-            score = cosine_similarity(user_vec, ev)
-            scored.append((score, event_id))
+            text_score = cosine_similarity(user_vec, ev)
+
+            region_bonus = 0.0
+            if region_id:
+                prefix = str(region_id)[:2]
+                region_bonus = region_pref.get(prefix, 0.0)
+
+            final_score = 0.7 * text_score + region_bonus
+            scored.append((final_score, event_id))
         except Exception as ex:
-            print(f"임베딩 파싱 실패: {ex}")
             continue
-    print(f"scored 개수: {len(scored)}")
+
     scored.sort(reverse=True)
     return [int(eid) for _, eid in scored[:6]]
 
 
-# ── 한줄 설명 생성 ────────────────────────────────────────────
-def _make_simple_explain(title: str, description: str, category_name: str) -> str:
-    # 설명 첫 문장 추출
-    if description:
-        lines = [l.strip() for l in description.replace("。", ".").replace("!", "!").split("\n") if l.strip()]
-        for line in lines:
-            if 10 <= len(line) <= 60:
-                return line
-        # 첫 줄이 너무 길면 앞 50자
-        if lines:
-            first = lines[0]
-            if len(first) > 60:
-                return first[:57] + "..."
-            return first
-    return f"{title} - {category_name} 행사입니다."
+# ── 한줄 설명 생성 (Gemini 연동으로 변경!) ─────────────────────────
+def _make_simple_explain_with_llm(title: str, description: str, category_name: str) -> str:
+    """Gemini API를 사용하여 맥락에 맞는 감성적인 한 줄 요약을 생성합니다."""
+    
+    # 설명이 너무 짧거나 없을 경우를 대비한 기본 폴백(Fallback)
+    if not description or len(description.strip()) < 5:
+        return f"{title}에서 특별한 경험을 만나보세요."
+
+    prompt = f"""
+행사 카테고리: {category_name}
+행사 제목: {title}
+행사 상세설명: {description}
+
+당신은 사람들의 마음을 끄는 전문 카피라이터입니다. 
+위 내용을 바탕으로 이 행사를 홍보할 수 있는 '50자 이내의 감성적이고 매력적인 한 줄 요약'을 작성해주세요.
+딱딱한 템플릿(예: ~을 주제로 한 ~에 초대합니다)은 절대 피하고, 시나 감성적인 광고 카피처럼 자연스럽고 멋지게 써주세요.
+
+예시: "빛나는 별을 보며 너와 나누는 이야기."
+출력: (다른 부연 설명 없이 오직 생성된 한 줄 카피만 출력할 것)
+"""
+    try:
+        # Gemini API 호출
+        response = llm_model.generate_content(prompt)
+        # 결과값 정리 후 반환
+        return response.text.strip().replace('"', '').replace("'", "")
+    except Exception as e:
+        print(f"Gemini API 호출 실패: {e}")
+        # API 오류 발생 시 템플릿 기반으로 돌아가는 안전장치
+        return f"{title}에서 잊지 못할 시간을 만들어보세요."
 
 
-# ── AI 태그 추천 (핵심) ───────────────────────────────────────
+# ── AI 태그 추천 ──────────────────────────────────────────────
 def suggest_tags(title: str, simple_explain: str, image_bytes: bytes = None) -> dict:
-    # 분석 텍스트: 제목 + 설명 (중복 강조)
-    text = f"{title} {title} {simple_explain}"  # 제목 2번 = 가중치 부여
-
+    text = f"{title} {title} {simple_explain}"
     query_vec = embedding_model.encode(text, convert_to_tensor=True)
 
-    # ── 카테고리: top-1 ──────────────────────────────────────
+    # ── 카테고리
     cat_sims = util.cos_sim(query_vec, _get_cat_embeddings())[0]
     cat_idx = int(torch.argmax(cat_sims).item())
     category_id = CATEGORIES[cat_idx]["id"]
     category_name = CATEGORIES[cat_idx]["name"]
 
-    # ── 주제: 유사도 상위 5개 (임계값 0.25 이상) ─────────────
+    # ── 주제
+    TOPIC_THRESHOLD = 0.3
     topic_sims = util.cos_sim(query_vec, _get_topic_embeddings())[0]
-    topic_scores = [(float(topic_sims[i].item()), TOPICS[i]) for i in range(len(TOPICS))]
-    topic_scores.sort(key=lambda x: -x[0])
-
-    topic_ids = []
-    for score, t in topic_scores:
-        if score >= 0.25 and len(topic_ids) < 5:
-            topic_ids.append(t["id"])
-    # 최소 1개 보장
+    topic_scores = sorted(
+        [(float(topic_sims[i].item()), TOPICS[i]) for i in range(len(TOPICS))],
+        key=lambda x: -x[0]
+    )
+    topic_ids = [t["id"] for score, t in topic_scores if score >= TOPIC_THRESHOLD][:5]
     if not topic_ids:
-        topic_ids = [topic_scores[0][1]["id"]]
+        # 그래도 0.3 넘는 게 없다면 강제로 상위 3개를 가져옴
+        topic_ids = [t["id"] for score, t in topic_scores][:3]
 
-    # ── 해시태그: 유사도 상위 5개 (임계값 0.25 이상) ─────────
+    # ── 해시태그: 유사도 커트라인을 0.3으로 낮춤 (최대 5개, 최소 1개 보장)
+    HASHTAG_THRESHOLD = 0.4
     hashtag_sims = util.cos_sim(query_vec, _get_hashtag_embeddings())[0]
-    hashtag_scores = [(float(hashtag_sims[i].item()), HASHTAGS[i]) for i in range(len(HASHTAGS))]
-    hashtag_scores.sort(key=lambda x: -x[0])
-
-    hashtag_names = []
-    for score, h in hashtag_scores:
-        if score >= 0.25 and len(hashtag_names) < 5:
-            hashtag_names.append(h["name"])
-    # 최소 1개 보장
+    hashtag_scores = sorted(
+        [(float(hashtag_sims[i].item()), HASHTAGS[i]) for i in range(len(HASHTAGS))],
+        key=lambda x: -x[0]
+    )
+    hashtag_names = [h["name"] for score, h in hashtag_scores if score >= HASHTAG_THRESHOLD][:5]
     if not hashtag_names:
-        hashtag_names = [hashtag_scores[0][1]["name"]]
+        # 그래도 0.3 넘는 게 없다면 강제로 상위 3개를 가져옴
+        hashtag_names = [h["name"] for score, h in hashtag_scores][:3]
 
-    # ── 한줄 설명 ─────────────────────────────────────────────
-    generated_explain = _make_simple_explain(title, simple_explain, category_name)
+    # ── 한줄 설명 생성 (Gemini 호출)
+    generated_explain = _make_simple_explain_with_llm(title, simple_explain, category_name)
 
     print(f"[AI태그추천] '{title}'")
     print(f"  → 카테고리: {category_name} (score: {float(cat_sims[cat_idx]):.3f})")
-    print(f"  → 주제: {[TOPICS[i-1]['name'] for i in topic_ids]}")
-    print(f"  → 해시태그: {hashtag_names}")
+    print(f"  → 주제({len(topic_ids)}개): {[TOPICS[i-1]['name'] for i in topic_ids]}")
+    print(f"  → 해시태그({len(hashtag_names)}개): {hashtag_names}")
     print(f"  → 한줄설명: {generated_explain}")
 
     return {

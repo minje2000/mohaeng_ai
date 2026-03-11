@@ -14,8 +14,8 @@ router = APIRouter(prefix="/ai", tags=["AI 추천"])
 def recommend(req: RecommendRequest):
     """행사 AI 추천 - 유사도 계산 후 상위 6개 event_id 반환"""
     try:
-        events = [{"event_id": e.event_id, "embedding": e.embedding} for e in req.events]
-        result = reco_service.recommend_events(req.user_text, events)
+        events = [{"event_id": e.event_id, "embedding": e.embedding, "region_id": e.region_id} for e in req.events]
+        result = reco_service.recommend_events(req.user_text, events, req.user_region_ids or [])
         return result
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
