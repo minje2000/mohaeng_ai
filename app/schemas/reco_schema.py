@@ -1,25 +1,22 @@
 from pydantic import BaseModel
-
+from typing import List, Optional
 
 class EventEmbedding(BaseModel):
     event_id: int
-    embedding: str  # JSON 문자열 "[0.1, 0.2, ...]"
-
+    embedding: str
 
 class RecommendRequest(BaseModel):
     user_text: str
-    events: list[EventEmbedding]
-
+    events: List[EventEmbedding]
 
 class EmbeddingRequest(BaseModel):
     text: str
 
-
 class EmbeddingResponse(BaseModel):
-    embedding: str  # JSON 문자열
-
+    embedding: str
 
 class TagSuggestResponse(BaseModel):
     categoryId: int
-    topicIds: list[int]
-    hashtagNames: list[str]
+    topicIds: List[int]
+    hashtagNames: List[str]
+    simpleExplain: str
