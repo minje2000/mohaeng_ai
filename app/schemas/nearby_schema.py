@@ -5,10 +5,11 @@ class NearbyRequest(BaseModel):
     festival_name: str
     latitude: float
     longitude: float
-    companion: str = "친구"                  # "연인" | "가족" | "친구" | "혼자"
+    companion: str = "연인"                  # "연인" | "가족" | "혼자"
     transport: str = "자가용"                # "자가용" | "도보"
     festival_start_time: Optional[str] = None  # ex) "10:00"
     festival_end_time:   Optional[str] = None  # ex) "18:00"
+    festival_date: Optional[str] = None        # ex) "2025-04-15" (행사 시작일)
 
 class CourseItem(BaseModel):
     time: str

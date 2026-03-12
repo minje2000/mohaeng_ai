@@ -1,6 +1,7 @@
 import os
 import json
 import httpx
+from typing import Optional
 from openai import AsyncOpenAI
 from app.schemas.nearby_schema import NearbyRequest, NearbyResponse, CourseItem
 
@@ -8,8 +9,49 @@ client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 GOOGLE_PLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 KAKAO_REST_KEY    = os.getenv("KAKAO_REST_API_KEY", "")
 
-DRIVE_15MIN_RADIUS  = 12000  # 차로 15분 ≒ 12km
-TRANSIT_30MIN_RADIUS = 6000  # 대중교통 30분 ≒ 6km
+DRIVE_15MIN_RADIUS   = 12000  # 차로 15분 ≒ 12km
+TRANSIT_30MIN_RADIUS =  6000  # 대중교통 30분 ≒ 6km
+
+def get_season_info(date_str: Optional[str]) -> str:
+    """행사 날짜로 계절 + 날씨 특성 반환"""
+    if not date_str:
+        return "계절 정보 없음"
+    try:
+        from datetime import datetime
+        month = datetime.strptime(date_str, "%Y-%m-%d").month
+    except Exception:
+        return "계절 정보 없음"
+
+    if month in (3, 4, 5):
+        return (
+            "계절: 봄 🌸\n"
+            "- 꽃놀이, 나들이 명소, 야외 테라스 카페 적극 추천\n"
+            "- 일교차 크므로 실내외 장소 균형 있게 구성\n"
+            "- 벚꽃·진달래 등 봄꽃 관련 명소 우선 추천"
+        )
+    elif month in (6, 7, 8):
+        return (
+            "계절: 여름 ☀️\n"
+            "- 폭염 고려해 냉방 잘 되는 실내 카페·관광지 위주 추천\n"
+            "- 야외 일정은 오전 일찍 또는 저녁 이후로 배치\n"
+            "- 워터파크·계곡·해변 등 물놀이 명소 우선 추천\n"
+            "- 뜨거운 음식보다 냉면·빙수·냉모밀 등 계절 메뉴 있는 식당 추천"
+        )
+    elif month in (9, 10, 11):
+        return (
+            "계절: 가을 🍂\n"
+            "- 단풍 명소, 억새밭, 가을 정원 등 야외 관광지 적극 추천\n"
+            "- 날씨 좋은 계절이므로 야외 테라스 카페 추천\n"
+            "- 전어·대하·송이버섯 등 가을 제철 음식 있는 식당 추천"
+        )
+    else:  # 12, 1, 2
+        return (
+            "계절: 겨울 ❄️\n"
+            "- 추위 고려해 실내 카페·관광지 위주로 구성\n"
+            "- 야외 일정은 최소화하고 이동 시간 짧게 배치\n"
+            "- 뜨끈한 국밥·찜·탕 류 식당 우선 추천\n"
+            "- 눈꽃 명소·크리스마스 마켓 등 겨울 특화 명소 우선 추천"
+        )
 
 
 # ─────────────────────────────────────────
@@ -162,6 +204,9 @@ async def generate_travel_course(req: NearbyRequest) -> NearbyResponse:
     else:
         festival_time_info = "행사 시간: 별도 안내 없음 (오전 10시 ~ 오후 6시로 가정)"
 
+    # 계절 정보
+    season_info = get_season_info(req.festival_date)
+
     system_prompt = """당신은 국내 축제 당일치기 여행 코스 전문 플래너입니다.
 반드시 아래 JSON 형식만 반환하고, 다른 텍스트는 포함하지 마세요.
 숙소, 조식, 숙박 관련 항목은 절대 포함하지 마세요.
@@ -190,12 +235,15 @@ async def generate_travel_course(req: NearbyRequest) -> NearbyResponse:
 동행: {req.companion}
 이동 수단: {req.transport}
 
+{season_info}
+
 {places_text}
 
 위 조건에 맞는 당일치기 코스를 짜주세요.
 - {req.companion} 코스에 맞는 분위기와 동선으로 구성
 - {'대중교통으로 다음 장소까지 30분 이내 이동 가능한 동선으로 구성할 것' if req.transport == '도보' else '차로 15분 이내 반경으로'}
 - 행사 시간을 반드시 스케쥴 중간에 배치하고, 전후로 맛집·카페·관광지를 배치
+- 위의 계절 정보를 반드시 반영해서 계절에 맞는 장소·음식·활동으로 구성할 것
 - 숙소, 조식, 숙박 관련 항목은 절대 포함하지 말 것
 - 카테고리는 "축제", "맛집", "카페", "관광" 중 하나만 사용
 - 별점 높은 장소 위주로 선별, 별점 낮은 곳은 제외
