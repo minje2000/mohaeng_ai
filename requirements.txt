@@ -9,10 +9,5 @@ tenacity==9.0.0
 python-multipart
 sentence-transformers
 transformers
-torch==2.2.2
-pillow
-paddlepaddle==2.6.2
-paddleocr==2.7.3
-opencv-python==4.8.1.78
-google-generativeai
-protobuf==3.20.2
+torch
+Pillow
