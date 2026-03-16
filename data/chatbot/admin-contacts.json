@@ -1,0 +1,30 @@
+[
+  {
+    "id": "688370d9-8b09-420b-a3d0-76fd4687012f",
+    "content": "결제가 됐는데 신청 내역이 안 보여요",
+    "status": "대기",
+    "createdAt": "2026-03-12T16:10:22+09:00",
+    "sessionId": "",
+    "hasAuthorization": true,
+    "source": "chatbot",
+    "answer": ""
+  },
+  {
+    "id": "0ee65756-1e1e-41b2-b36a-e5ee520559ff",
+    "content": "결제가 됐는데 신청 내역이 안 보여요",
+    "status": "대기",
+    "createdAt": "2026-03-12T15:54:01+09:00",
+    "sessionId": "",
+    "hasAuthorization": true,
+    "source": "chatbot"
+  },
+  {
+    "id": 1773296316660,
+    "createdAt": "2026-03-12T15:18:36",
+    "sessionId": "sess_1773191913444_yt0kkp6c",
+    "authorization": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwicm9sZSI6IlJPTEVf",
+    "message": "결제가 됐는데 신청 내역이 안 보여요",
+    "status": "대기",
+    "answer": ""
+  }
+]

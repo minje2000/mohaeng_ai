@@ -1,0 +1,308 @@
+[
+  {
+    "id": "87537b8a-dbaf-4f1f-8d10-309a4d51daad",
+    "question": "내 행사 참여 내역 확인해줘",
+    "answer": "최근 참여 행사 내역이에요.\n- 소상공인 축제: 참여확정 (2026-03-06 ~ 2026-03-07)\n- 소상공인 축제: 취소 (2026-03-06 ~ 2026-03-07)\n- 마린 케어 해양 엑스포: 참여확정 (2026-06-20 ~ 2026-06-22)",
+    "intent": "my_participation",
+    "createdAt": "2026-03-15T21:41:56+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "a65bdbce-3f6e-48d8-82bb-de82847afd20",
+    "question": "문의는 어디서 남길 수 있어?",
+    "answer": "행사 상세 페이지에서 문의를 남길 수 있고, 마이페이지에서 작성 문의와 받은 문의를 확인할 수 있어요.",
+    "intent": "system_inquiry",
+    "createdAt": "2026-03-15T21:41:53+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "26d708e9-eb53-46a5-9240-2389f34ab9e9",
+    "question": "행사 취소하면 환불 규정 어떻게 돼?",
+    "answer": "환불 규정 안내입니다.\n\n- 행사 시작 7일 전 취소: 전액 환불\n- 행사 시작 3~6일 전 취소: 50% 환불\n- 행사 시작 2일 전 ~ 당일 취소: 환불 불가\n- 주최자 사정으로 취소되거나 반려된 경우: 전액 환불\n- 실제 결제/환불 처리 시점은 PG사 또는 결제 수단 처리 일정에 따라 다를 수 있습니다.",
+    "intent": "refund_policy",
+    "createdAt": "2026-03-15T21:41:51+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "ea48c826-2692-4121-ae45-0817cb846941",
+    "question": "지금 신청 가능한 행사 추천해줘",
+    "answer": "신청 가능 우선으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:41:40+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "bc56132b-5b98-45a0-b182-50067189bbb1",
+    "question": "요즘 인기 있는 행사 뭐 있어?",
+    "answer": "현재 조건 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:41:23+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "3a7d7c08-3ccf-442b-b965-6c67788c4cd0",
+    "question": "강남에 있는 무료로 참여할 수 있는 행사 추천해줘",
+    "answer": "강남 기준 / 무료 우선으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:41:09+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "e0ffc564-454f-4787-a8d6-09bca5a4d174",
+    "question": "무료로 참여할 수 있는 행사 있어?",
+    "answer": "네, 무료로 참여 가능한 행사도 많이 찾아볼 수 있습니다!\n\n관심 있는 지역이나 날짜를 알려주시면 바로 추천해 드릴게요. 😊",
+    "intent": "chat",
+    "createdAt": "2026-03-15T21:40:40+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "ec4a1aa5-5368-4ee4-a982-f5058e926ab0",
+    "question": "네트워킹 행사 찾아줘",
+    "answer": "현재 조건 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:35:05+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "77188e1a-d3c7-4911-bdb5-c50b67a84381",
+    "question": "강남 근처 행사 알려줘",
+    "answer": "강남 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:34:52+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "d9937e44-4e8d-4153-a974-28321fa56c15",
+    "question": "지금 신청 가능한 행사 추천해줘",
+    "answer": "신청 가능 우선으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:34:37+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "45156727-1dfc-4d14-817d-b14f99071cfe",
+    "question": "전주 근처 행사 찾아줘",
+    "answer": "전주 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:34:27+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "c914b284-59e4-4a8d-8abf-34f82459083c",
+    "question": "무료 행사 위주로 추천해줘",
+    "answer": "무료 우선으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:30:25+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "5abab852-d7aa-4b5e-b5af-dd33321e6850",
+    "question": "서울에서 이번 주 행사 추천해줘",
+    "answer": "서울 기준 / 이번 주으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:30:12+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "9903990b-fe1a-4b60-9de4-0c51151e40f4",
+    "question": "전주 근처 행사 찾아줘",
+    "answer": "전주 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:30:06+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "bd55cf57-900e-4421-9ee4-be4f97613ed3",
+    "question": "내 관심 행사 기반으로 추천해줘",
+    "answer": "최근 관심 행사 목록이에요.\n- 서커스 페스티벌 (2026-03-10 ~ 2026-03-12)\n- 서초 푸드 페스티벌 (2026-03-08 ~ 2026-03-24)\n- 소상공인 축제 (2026-03-06 ~ 2026-03-07)",
+    "intent": "my_wishlist",
+    "createdAt": "2026-03-15T21:29:53+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "9a870a08-6f2f-4300-b3e1-aaae0450a14b",
+    "question": "뭘봐",
+    "answer": "안녕하세요! 모행 AI 챗봇입니다. 😊\n행사 추천, 일정, 환불 규정, 문의, 지도, 달력 등 궁금한 점이 있으시면 언제든지 편하게 말씀해주세요!",
+    "intent": "chat",
+    "createdAt": "2026-03-15T21:20:36+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "01c82701-13ac-4823-8aae-757dbf7a7e04",
+    "question": "하이",
+    "answer": "안녕하세요! 모행 AI 챗봇입니다. 😊\n행사 추천, 일정, 환불 규정, 문의, 지도, 달력 등 궁금한 점이 있으시면 언제든지 편하게 말씀해주세요!",
+    "intent": "chat",
+    "createdAt": "2026-03-15T21:20:25+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "62886f0d-fad6-4bb4-bb31-4cc8705c5d7b",
+    "question": "안녕",
+    "answer": "안녕하세요! 모행 AI 챗봇입니다. 😊\n행사 추천, 일정, 환불 규정, 문의, 지도, 달력 등 궁금한 점이 있으시면 언제든지 편하게 말씀해주세요!",
+    "intent": "chat",
+    "createdAt": "2026-03-15T21:20:19+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "fabab055-7165-43f9-882b-866051b8deee",
+    "question": "강남 근처 행사 알려줘",
+    "answer": "강남 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:19:25+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "629d7e65-78dc-4f8c-b3a5-068f638d2082",
+    "question": "지금 신청 가능한 행사 추천해줘",
+    "answer": "신청 가능 우선으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T21:19:17+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "73b59195-099e-4151-9f99-f254a41fc7bc",
+    "question": "강남 근처에서 열리는 행사 알려줘",
+    "answer": "강남 지역에서 조건에 맞는 행사를 찾지 못했어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T20:59:45+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "676794ab-a6f5-4744-923a-499fb5ba41b3",
+    "question": "강남 근처 행사 알려줘",
+    "answer": "강남 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T20:59:36+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "acdf47b7-b187-434c-ac37-c689a82510bc",
+    "question": "강남 근처에서 열리는 행사 알려줘",
+    "answer": "강남 지역에서 조건에 맞는 행사를 찾지 못했어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T20:59:19+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "26742c86-6198-4ad7-8536-5e29a57bebb3",
+    "question": "서울에서 이번 주 행사 추천해줘",
+    "answer": "이번 주에 진행되는 행사를 찾지 못했어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T20:59:10+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "8366c473-e4fe-4e22-a83b-d3140c5d4e60",
+    "question": "전주 근처 행사 찾아줘",
+    "answer": "전주 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T20:36:40+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "462269c4-eb50-4380-8919-b0060da6e2f7",
+    "question": "서울에서 이번 주 행사 추천해줘",
+    "answer": "이번 주에 진행되는 행사를 찾지 못했어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-15T20:36:35+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "a6c571f0-3cfd-48ec-8844-51e65c0ee552",
+    "question": "지금 신청 가능한 행사 추천해줘",
+    "answer": "신청 가능 우선으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-12T17:05:14+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "62be7acb-d63f-41e5-9526-86c07cd7687c",
+    "question": "무료 행사 위주로 추천해줘",
+    "answer": "무료 우선으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-12T16:54:51+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "33ea5c73-765f-4383-86ee-e98f2676fc38",
+    "question": "전주 근처 행사 찾아줘",
+    "answer": "전주 기준으로 조건에 맞는 행사들을 골라봤어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-12T16:54:42+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "a21a79fe-75ee-403f-a310-5c829b97acf2",
+    "question": "서울에서 이번 주 행사 추천해줘",
+    "answer": "이번 주에 진행되는 행사를 찾지 못했어요.",
+    "intent": "recommend",
+    "createdAt": "2026-03-12T16:54:25+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "d32fb7f8-52ed-4b9a-9a47-48037e58e092",
+    "question": "관리자 문의: 결제가 됐는데 신청 내역이 안 보여요",
+    "answer": "관리자 문의가 접수되었어요. 확인 후 답변드릴게요.",
+    "intent": "admin_contact",
+    "createdAt": "2026-03-12T16:10:22+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "1ca6c798-c12c-4ae4-8fb0-4954b678e471",
+    "question": "관리자 문의",
+    "answer": "관리자에게 전달할 내용을 아래 형식으로 보내주세요.\n\n관리자 문의: 문의 내용\n\n예) 관리자 문의: 결제가 됐는데 신청 내역이 안 보여요",
+    "intent": "admin_contact_help",
+    "createdAt": "2026-03-12T16:10:18+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "b5f2edfd-8f03-4fd1-91df-33848f113d11",
+    "question": "관리자 문의: 결제가 됐는데 신청 내역이 안 보여요",
+    "answer": "관리자 문의가 접수되었어요. 확인 후 답변드릴게요.",
+    "intent": "admin_contact",
+    "createdAt": "2026-03-12T15:54:01+09:00",
+    "sessionId": "",
+    "isError": false
+  },
+  {
+    "id": "9fa9093a-f195-4096-b2b1-8547cacce177",
+    "question": "관리자 문의",
+    "answer": "관리자에게 전달할 내용을 아래 형식으로 보내주세요.\n\n관리자 문의: 문의 내용\n\n예) 관리자 문의: 결제가 됐는데 신청 내역이 안 보여요",
+    "intent": "admin_contact_help",
+    "createdAt": "2026-03-12T15:53:56+09:00",
+    "sessionId": "",
+    "isError": false
+  }
+]
