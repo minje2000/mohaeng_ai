@@ -10,7 +10,6 @@ class BizOcrResponse(BaseModel):
     companyName: str                    # 법인명 / 상호
     ownerName: str                      # 대표자 성명
     openDate: str                       # 개업일 (YYYYMMDD)
-    # 국세청 검증 결과
-    isValid: Optional[bool] = None      # True: 유효, False: 무효, None: 검증 생략
+    taxType: str                        # 과세 유형(개인 사업자 | 법인 사업자)
     validationStatus: Optional[str] = None   # VALID | INVALID | API_KEY_MISSING | API_ERROR
     validationMessage: Optional[str] = None  # 검증 결과 메시지
