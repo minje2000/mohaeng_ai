@@ -27,193 +27,63 @@ class AdminSupportService:
         return payload if isinstance(payload, list) else []
 
     def _write_json(self, path: Path, items: list[dict[str, Any]]) -> None:
-        path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding='utf-8')
+        path.write_text(
+            json.dumps(items, ensure_ascii=False, indent=2),
+            encoding='utf-8',
+        )
 
     def _now(self) -> str:
         return datetime.now(timezone.utc).astimezone().isoformat(timespec='seconds')
 
-    def _normalize_status(self, value: Any, *, answer: str = '') -> str:
-        text = str(value or '').strip()
-        mapping = {
-            'RECEIVED': '대기',
-            'WAITING': '대기',
-            'PENDING': '대기',
-            'IN_PROGRESS': '처리중',
-            'PROCESSING': '처리중',
-            'ANSWERED': '답변완료',
-            'DONE': '답변완료',
-            'CLOSED': '종결',
-        }
-        if text in mapping:
-            return mapping[text]
-        if text in {'대기', '처리중', '답변완료', '종결'}:
-            return text
-        if answer.strip():
-            return '답변완료'
-        return '대기'
-
-    def _ensure_session_id(self, item: dict[str, Any]) -> str:
-        session_id = str(item.get('sessionId') or item.get('session_id') or '').strip()
-        if not session_id:
-            session_id = f'auto_{uuid4().hex[:20]}'
-            item['sessionId'] = session_id
-        return session_id
-
-    def _append_history(self, item: dict[str, Any], action: str, actor: str, changes: dict[str, Any] | None = None) -> None:
-        history = item.get('history')
-        if not isinstance(history, list):
-            history = []
-        history.insert(0, {
-            'id': uuid4().hex,
-            'action': action,
-            'actor': actor,
-            'createdAt': self._now(),
-            'changes': changes or {},
-        })
-        item['history'] = history[:50]
-
-    def _normalize_contact(self, item: dict[str, Any]) -> dict[str, Any]:
-        normalized = dict(item)
-        normalized['id'] = str(item.get('id') or item.get('ticketId') or uuid4())
-        normalized['content'] = str(item.get('content') or item.get('message') or '').strip()
-        normalized['answer'] = str(item.get('answer') or '').strip()
-        normalized['status'] = self._normalize_status(item.get('status'), answer=normalized['answer'])
-        normalized['sessionId'] = self._ensure_session_id(normalized)
-        normalized['source'] = str(item.get('source') or 'chatbot').strip() or 'chatbot'
-        normalized['hasAuthorization'] = bool(item.get('hasAuthorization') or item.get('authorization') or item.get('accessToken'))
-        normalized['assignee'] = str(item.get('assignee') or '').strip()
-        normalized['category'] = str(item.get('category') or '일반').strip() or '일반'
-        normalized['priority'] = str(item.get('priority') or '보통').strip() or '보통'
-        normalized['createdAt'] = item.get('createdAt') or self._now()
-        normalized['answeredAt'] = item.get('answeredAt') or ''
-        normalized['updatedAt'] = item.get('updatedAt') or normalized['answeredAt'] or normalized['createdAt']
-        history = item.get('history')
-        normalized['history'] = history if isinstance(history, list) else []
-        return normalized
-
-    def _save_all_contacts(self, items: list[dict[str, Any]]) -> None:
-        normalized = [self._normalize_contact(item) for item in items]
-        self._write_json(CONTACTS_PATH, normalized)
-
-    def save_contact(self, *, content: str, session_id: str | None = None, authorization: str | None = None, source: str = 'chatbot') -> dict[str, Any]:
+    def save_contact(
+        self,
+        *,
+        content: str,
+        session_id: str | None = None,
+        authorization: str | None = None,
+        source: str = 'chatbot',
+    ) -> dict[str, Any]:
         items = self._read_json(CONTACTS_PATH)
         row = {
             'id': str(uuid4()),
             'content': content.strip(),
             'status': '대기',
             'createdAt': self._now(),
-            'updatedAt': self._now(),
-            'sessionId': (session_id or '').strip() or f'auto_{uuid4().hex[:20]}',
+            'sessionId': session_id or '',
             'hasAuthorization': bool(authorization),
             'source': source,
             'answer': '',
-            'assignee': '',
-            'category': '회원 문의' if authorization else '일반',
-            'priority': '보통',
-            'history': [],
         }
-        self._append_history(row, '접수', 'AI 챗봇', {'status': '대기'})
         items.insert(0, row)
-        self._save_all_contacts(items[:500])
+        self._write_json(CONTACTS_PATH, items[:500])
         return row
 
     def list_contacts(self, *, limit: int = 100) -> list[dict[str, Any]]:
-        items = self._read_json(CONTACTS_PATH)
-        normalized = [self._normalize_contact(item) for item in items[: max(1, min(limit, 500))]]
-        if normalized != items[: len(normalized)]:
-            full_items = [self._normalize_contact(item) for item in items]
-            self._write_json(CONTACTS_PATH, full_items)
-        return normalized
+        return self._read_json(CONTACTS_PATH)[: max(1, min(limit, 500))]
 
-    def update_contact(
-        self,
-        *,
-        item_id: str,
-        answer: str | None = None,
-        status: str | None = None,
-        assignee: str | None = None,
-        category: str | None = None,
-        priority: str | None = None,
-        memo: str | None = None,
-        actor: str = '관리자',
-    ) -> dict[str, Any] | None:
+    def answer_contact(self, *, item_id: str, answer: str, status: str = '답변완료') -> dict[str, Any] | None:
         items = self._read_json(CONTACTS_PATH)
         updated = None
-        for idx, item in enumerate(items):
-            current = self._normalize_contact(item)
-            item_key = current.get('id') or current.get('ticketId')
-            if str(item_key) != str(item_id):
-                continue
-
-            changes: dict[str, Any] = {}
-            if answer is not None:
-                new_answer = str(answer).strip()
-                if current.get('answer', '') != new_answer:
-                    current['answer'] = new_answer
-                    changes['answer'] = True
-                    if new_answer:
-                        current['answeredAt'] = self._now()
-                        if (status or '').strip() in {'', '대기'}:
-                            status = '답변완료'
-            if status is not None:
-                normalized_status = self._normalize_status(status, answer=current.get('answer', ''))
-                if current.get('status') != normalized_status:
-                    current['status'] = normalized_status
-                    changes['status'] = normalized_status
-            if assignee is not None:
-                new_assignee = str(assignee).strip()
-                if current.get('assignee', '') != new_assignee:
-                    current['assignee'] = new_assignee
-                    changes['assignee'] = new_assignee
-            if category is not None:
-                new_category = str(category).strip() or '일반'
-                if current.get('category', '') != new_category:
-                    current['category'] = new_category
-                    changes['category'] = new_category
-            if priority is not None:
-                new_priority = str(priority).strip() or '보통'
-                if current.get('priority', '') != new_priority:
-                    current['priority'] = new_priority
-                    changes['priority'] = new_priority
-
-            current['updatedAt'] = self._now()
-            if memo and str(memo).strip():
-                changes['memo'] = str(memo).strip()
-            self._append_history(current, '수정' if changes else '조회', actor, changes)
-            items[idx] = current
-            updated = current
-            break
+        for item in items:
+            if str(item.get('id')) == str(item_id):
+                item['answer'] = (answer or '').strip()
+                item['status'] = (status or '답변완료').strip()
+                item['answeredAt'] = self._now()
+                updated = item
+                break
         if updated is not None:
-            self._save_all_contacts(items)
+            self._write_json(CONTACTS_PATH, items)
         return updated
 
-    def answer_contact(self, *, item_id: str, answer: str, status: str = '답변완료', assignee: str | None = None, memo: str | None = None) -> dict[str, Any] | None:
-        return self.update_contact(
-            item_id=item_id,
-            answer=answer,
-            status=status,
-            assignee=assignee,
-            memo=memo,
-            actor=assignee or '관리자',
-        )
-
-    def delete_contact(self, *, item_id: str) -> dict[str, Any] | None:
-        items = self._read_json(CONTACTS_PATH)
-        target = None
-        remaining: list[dict[str, Any]] = []
-        for item in items:
-            current = self._normalize_contact(item)
-            if str(current.get('id') or current.get('ticketId')) == str(item_id):
-                current['updatedAt'] = self._now()
-                self._append_history(current, '삭제', '관리자', {})
-                target = current
-                continue
-            remaining.append(current)
-        if target is not None:
-            self._write_json(CONTACTS_PATH, remaining)
-        return target
-
-    def save_log(self, *, question: str, answer: str, intent: str | None = None, session_id: str | None = None, is_error: bool = False) -> dict[str, Any]:
+    def save_log(
+        self,
+        *,
+        question: str,
+        answer: str,
+        intent: str | None = None,
+        session_id: str | None = None,
+        is_error: bool = False,
+    ) -> dict[str, Any]:
         items = self._read_json(LOGS_PATH)
         row = {
             'id': str(uuid4()),
@@ -228,8 +98,37 @@ class AdminSupportService:
         self._write_json(LOGS_PATH, items[:1000])
         return row
 
+    def _normalize_admin_contact_question(self, question: str) -> str:
+        text = (question or '').strip()
+        prefixes = ['관리자 문의:', '관리자문의:']
+        for prefix in prefixes:
+            if text.startswith(prefix):
+                return text.split(':', 1)[1].strip()
+        return text
+
+    def _enrich_log_session_ids(self, logs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        contacts = self._read_json(CONTACTS_PATH)
+        contact_session_map: dict[str, str] = {}
+        for contact in contacts:
+            key = (contact.get('content') or '').strip()
+            session_id = (contact.get('sessionId') or '').strip()
+            if key and session_id and key not in contact_session_map:
+                contact_session_map[key] = session_id
+
+        enriched: list[dict[str, Any]] = []
+        for log in logs:
+            item = dict(log)
+            if not (item.get('sessionId') or '').strip():
+                question_key = self._normalize_admin_contact_question(item.get('question') or '')
+                session_id = contact_session_map.get(question_key, '')
+                if session_id:
+                    item['sessionId'] = session_id
+            enriched.append(item)
+        return enriched
+
     def list_logs(self, *, limit: int = 150) -> list[dict[str, Any]]:
-        return self._read_json(LOGS_PATH)[: max(1, min(limit, 1000))]
+        items = self._read_json(LOGS_PATH)[: max(1, min(limit, 1000))]
+        return self._enrich_log_session_ids(items)
 
     def summarize_logs(self) -> dict[str, Any]:
         items = self._read_json(LOGS_PATH)
@@ -239,5 +138,8 @@ class AdminSupportService:
         return {
             'total': total,
             'errors': errors,
-            'topIntents': [{'intent': name, 'count': count} for name, count in intents.most_common(10)],
+            'topIntents': [
+                {'intent': name, 'count': count}
+                for name, count in intents.most_common(10)
+            ],
         }

@@ -6,7 +6,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T13:06:15+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "fd4ba9f0-ebe4-4ae9-9f78-e5134deaeabb",
@@ -15,7 +16,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T13:00:56+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "e1946573-443d-4006-a699-5ff9ac167cca",
@@ -24,7 +26,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:24:02+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "0a597ca1-089c-4778-bf51-df1eb5eded73",
@@ -33,7 +36,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:23:50+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "dd8e59e3-a37f-420f-ad07-7cffb07ce824",
@@ -42,7 +46,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:23:38+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "75b9e203-0c67-47d6-ab16-275588cd26cc",
@@ -51,7 +56,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:23:26+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "4a999fb0-6dd9-408c-aa30-998de9b05be0",
@@ -60,7 +66,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:23:16+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "b0cc468d-128a-4e2a-b16b-3e5f92942af4",
@@ -69,7 +76,8 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-17T12:23:01+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "8bc81522-5b1d-4976-a3b7-c61248c0ab8f",
@@ -78,7 +86,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:22:51+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "90888634-930a-4105-98ca-bd2f7f8ef3ff",
@@ -87,7 +96,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:22:38+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "badab05d-20c6-4925-bb3b-433f647a857d",
@@ -96,7 +106,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:22:26+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "ae9fdecb-8c31-4daf-8708-214d7b5b2e7c",
@@ -105,7 +116,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:22:10+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "98cd90f9-4184-4628-81ab-02933bd49415",
@@ -114,7 +126,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T12:21:53+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "dc76f246-4b11-44ae-bec4-9466f894338e",
@@ -123,7 +136,8 @@
     "intent": "system_login",
     "createdAt": "2026-03-17T11:11:12+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "8332e490-2af5-4b3d-8f30-750c63c0b056",
@@ -132,7 +146,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T11:10:22+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "d1490584-6152-4161-835f-5d5a41314de0",
@@ -141,7 +156,8 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-17T11:10:14+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "db19a100-5c99-4502-b3dc-bd5ef5b4c3de",
@@ -150,7 +166,8 @@
     "intent": "chat",
     "createdAt": "2026-03-17T10:57:20+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "abeaa1d9-6dec-4cca-85ce-87af793414c6",
@@ -159,7 +176,8 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-17T10:56:49+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "ee9f2693-a648-45a2-93af-27dc559cff7c",
@@ -168,7 +186,8 @@
     "intent": "system_inquiry",
     "createdAt": "2026-03-17T10:56:41+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "fbf5a9ae-63e8-4a36-8237-99f2eaab26e9",
@@ -177,7 +196,8 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-17T10:56:32+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "8ca6437b-13c5-4200-847d-085e63f758cd",
@@ -186,7 +206,8 @@
     "intent": "chat",
     "createdAt": "2026-03-17T10:56:17+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "cba81eba-b286-4b5b-a5f3-fcfa777569a6",
@@ -195,7 +216,8 @@
     "intent": "system_login",
     "createdAt": "2026-03-17T10:56:00+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "7817ae2f-0a11-4b52-84f3-29bacb6d3ab5",
@@ -204,7 +226,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-17T10:50:09+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "9c45f93d-0f48-42be-9bd8-67f873d4ae55",
@@ -213,7 +236,8 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-17T10:49:57+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "0e038d05-9cf4-45a9-a0fd-fc83c3e175f8",
@@ -222,7 +246,8 @@
     "intent": "system_login",
     "createdAt": "2026-03-17T10:48:10+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "87b1d8a4-f440-44cc-a1d7-f5a9e8db50b7",
@@ -231,7 +256,8 @@
     "intent": "system_login",
     "createdAt": "2026-03-17T10:47:24+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "bce56308-d963-471d-97df-edd602503154",
@@ -240,7 +266,8 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-17T10:46:59+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "87537b8a-dbaf-4f1f-8d10-309a4d51daad",
@@ -249,7 +276,8 @@
     "intent": "my_participation",
     "createdAt": "2026-03-15T21:41:56+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "a65bdbce-3f6e-48d8-82bb-de82847afd20",
@@ -258,7 +286,8 @@
     "intent": "system_inquiry",
     "createdAt": "2026-03-15T21:41:53+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "26d708e9-eb53-46a5-9240-2389f34ab9e9",
@@ -267,7 +296,8 @@
     "intent": "refund_policy",
     "createdAt": "2026-03-15T21:41:51+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "ea48c826-2692-4121-ae45-0817cb846941",
@@ -276,7 +306,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:41:40+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "bc56132b-5b98-45a0-b182-50067189bbb1",
@@ -285,7 +316,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:41:23+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "3a7d7c08-3ccf-442b-b965-6c67788c4cd0",
@@ -294,7 +326,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:41:09+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "e0ffc564-454f-4787-a8d6-09bca5a4d174",
@@ -303,7 +336,8 @@
     "intent": "chat",
     "createdAt": "2026-03-15T21:40:40+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "ec4a1aa5-5368-4ee4-a982-f5058e926ab0",
@@ -312,7 +346,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:35:05+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "77188e1a-d3c7-4911-bdb5-c50b67a84381",
@@ -321,7 +356,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:34:52+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "d9937e44-4e8d-4153-a974-28321fa56c15",
@@ -330,7 +366,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:34:37+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "45156727-1dfc-4d14-817d-b14f99071cfe",
@@ -339,7 +376,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:34:27+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "c914b284-59e4-4a8d-8abf-34f82459083c",
@@ -348,7 +386,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:30:25+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "5abab852-d7aa-4b5e-b5af-dd33321e6850",
@@ -357,7 +396,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:30:12+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "9903990b-fe1a-4b60-9de4-0c51151e40f4",
@@ -366,7 +406,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:30:06+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "bd55cf57-900e-4421-9ee4-be4f97613ed3",
@@ -375,7 +416,8 @@
     "intent": "my_wishlist",
     "createdAt": "2026-03-15T21:29:53+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "9a870a08-6f2f-4300-b3e1-aaae0450a14b",
@@ -384,7 +426,8 @@
     "intent": "chat",
     "createdAt": "2026-03-15T21:20:36+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "01c82701-13ac-4823-8aae-757dbf7a7e04",
@@ -393,7 +436,8 @@
     "intent": "chat",
     "createdAt": "2026-03-15T21:20:25+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "62886f0d-fad6-4bb4-bb31-4cc8705c5d7b",
@@ -402,7 +446,8 @@
     "intent": "chat",
     "createdAt": "2026-03-15T21:20:19+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "fabab055-7165-43f9-882b-866051b8deee",
@@ -411,7 +456,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:19:25+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "629d7e65-78dc-4f8c-b3a5-068f638d2082",
@@ -420,7 +466,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T21:19:17+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "73b59195-099e-4151-9f99-f254a41fc7bc",
@@ -429,7 +476,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T20:59:45+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "676794ab-a6f5-4744-923a-499fb5ba41b3",
@@ -438,7 +486,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T20:59:36+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "acdf47b7-b187-434c-ac37-c689a82510bc",
@@ -447,7 +496,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T20:59:19+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "26742c86-6198-4ad7-8536-5e29a57bebb3",
@@ -456,7 +506,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T20:59:10+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "8366c473-e4fe-4e22-a83b-d3140c5d4e60",
@@ -465,7 +516,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T20:36:40+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "462269c4-eb50-4380-8919-b0060da6e2f7",
@@ -474,7 +526,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-15T20:36:35+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "a6c571f0-3cfd-48ec-8844-51e65c0ee552",
@@ -483,7 +536,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-12T17:05:14+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "62be7acb-d63f-41e5-9526-86c07cd7687c",
@@ -492,7 +546,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-12T16:54:51+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "33ea5c73-765f-4383-86ee-e98f2676fc38",
@@ -501,7 +556,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-12T16:54:42+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "a21a79fe-75ee-403f-a310-5c829b97acf2",
@@ -510,7 +566,8 @@
     "intent": "recommend",
     "createdAt": "2026-03-12T16:54:25+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "d32fb7f8-52ed-4b9a-9a47-48037e58e092",
@@ -519,7 +576,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-12T16:10:22+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "1ca6c798-c12c-4ae4-8fb0-4954b678e471",
@@ -528,7 +586,8 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-12T16:10:18+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "b5f2edfd-8f03-4fd1-91df-33848f113d11",
@@ -537,7 +596,8 @@
     "intent": "admin_contact",
     "createdAt": "2026-03-12T15:54:01+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   },
   {
     "id": "9fa9093a-f195-4096-b2b1-8547cacce177",
@@ -546,6 +606,7 @@
     "intent": "admin_contact_help",
     "createdAt": "2026-03-12T15:53:56+09:00",
     "sessionId": "",
-    "isError": false
+    "isError": false,
+    "statusCode": 200
   }
 ]
