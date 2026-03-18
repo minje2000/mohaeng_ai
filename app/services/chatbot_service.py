@@ -1,37 +1,157 @@
 from __future__ import annotations
 
-from app.schemas.chat_schema import ChatResponse, ChatCard
-from app.services.admin_support_service import AdminSupportService
+import time
+from dataclasses import dataclass
+from typing import Any
+
+from app.schemas.chat_schema import ChatResponse
+from app.services.action_service import ActionService
+from app.services.answer_composer_service import AnswerComposerService
+from app.services.chat_log_service import ChatLogService
 from app.services.gemini_service import GeminiService
 from app.services.intent_service import IntentService
-from app.services.rag_service import RagService
 from app.services.recommendation_service import RecommendationService
-from app.services.spring_api_service import SpringApiService
+from app.services.retrieval_service import RetrievalService
+
+
+@dataclass
+class RouteDecision:
+    route_type: str
+    intent: str
+    action_name: str | None = None
+    classifier: str | None = None
 
 
 class ChatbotService:
-    def __init__(self):
-        self.gemini = GeminiService()
+    def __init__(self) -> None:
         self.intent = IntentService()
-        self.rag = RagService()
+        self.retrieval = RetrievalService()
         self.recommender = RecommendationService()
-        self.spring = SpringApiService()
-        self.admin_support = AdminSupportService()
+        self.action_service = ActionService()
+        self.answer_composer = AnswerComposerService()
+        self.gemini = GeminiService()
+        self.logs = ChatLogService()
 
-    def _admin_contact_prompt(self) -> str:
-        return (
-            '관리자에게 전달할 내용을 아래 형식으로 보내주세요.\n\n'
-            '관리자 문의: 문의 내용\n\n'
-            '예) 관리자 문의: 결제가 됐는데 신청 내역이 안 보여요'
+    def _log(
+        self,
+        *,
+        started_at: float,
+        session_id: str | None,
+        page_type: str | None,
+        intent: str | None,
+        route_type: str,
+        message: str,
+        answer: str,
+        cards: list | None,
+        sources: list | None,
+        status_code: int = 200,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        latency_ms = int((time.perf_counter() - started_at) * 1000)
+        self.logs.log_event(
+            session_id=session_id,
+            client_key=None,
+            page_type=page_type,
+            intent=intent,
+            status_code=status_code,
+            latency_ms=latency_ms,
+            message=message,
+            answer_preview=answer,
+            card_count=len(cards or []),
+            source_count=len(sources or []),
+            metadata={"routeType": route_type, **(metadata or {})},
         )
 
-    def _login_issue_email_guide(self) -> str:
-        return (
-            '로그인 문제는 관리자 문의로 바로 접수할 수 없어요. '
-            '관리자 문의는 로그인한 상태에서만 접수돼요. '
-            '로그인 자체가 되지 않으면 관리자 이메일 mohaeng8826@gmail.com 으로 '
-            '상황을 보내 주세요.'
+    def _heuristic_route(
+        self,
+        raw_message: str,
+        *,
+        page_type: str | None,
+        history: list[dict] | None,
+        region_hint: str | None,
+        location_keywords: list[str] | None,
+    ) -> RouteDecision:
+        text = (raw_message or "").strip()
+        lowered = text.lower()
+        if lowered.startswith("관리자 문의:") or lowered.startswith("관리자문의:"):
+            return RouteDecision(route_type="action", intent="admin_contact", action_name="submit_admin_contact", classifier="rule")
+        if "관리자" in text and "문의" in text:
+            return RouteDecision(route_type="action", intent="admin_contact_help", action_name="admin_contact_help", classifier="rule")
+        if "결제" in text and any(token in text for token in ["상태", "내역", "확인", "보여"]):
+            return RouteDecision(route_type="action", intent="payment", action_name="my_payment_statuses", classifier="rule")
+        if "환불" in text and any(token in text for token in ["상태", "처리", "내역", "확인", "보여"]):
+            return RouteDecision(route_type="action", intent="refund", action_name="my_refund_statuses", classifier="rule")
+        if "부스" in text and any(token in text for token in ["상태", "신청", "내역", "확인", "보여"]):
+            return RouteDecision(route_type="action", intent="booth", action_name="my_booth_statuses", classifier="rule")
+        if "내 문의" in text or ("문의 내역" in text and "내" in text) or ("ai 문의" in text and "내" in text):
+            return RouteDecision(route_type="action", intent="my_inquiry", action_name="my_inquiries", classifier="rule")
+        if ("내 참여" in text) or ("참여 행사" in text and "내" in text) or ("신청 내역" in text):
+            return RouteDecision(route_type="action", intent="my_participation", action_name="my_participations", classifier="rule")
+        if ("관심 행사" in text) or ("찜" in text and any(token in text for token in ["목록", "내역", "보여", "확인"])):
+            return RouteDecision(route_type="action", intent="my_wishlist", action_name="my_wishlist", classifier="rule")
+        if ("내" in text and "상태" in text) or ("내" in text and "현황" in text) or ("신청" in text and "상태" in text):
+            return RouteDecision(route_type="action", intent="my_status", action_name="my_status_summary", classifier="rule")
+        if self.intent.looks_like_event_request(text, page_type=page_type, region_hint=region_hint, location_keywords=location_keywords):
+            return RouteDecision(route_type="recommendation", intent="event_search", classifier="heuristic")
+
+        hint_intent = self.intent.detect(text, page_type=page_type, history=history)
+        if hint_intent in {"recommend"}:
+            return RouteDecision(route_type="recommendation", intent="event_search", classifier="intent")
+        if hint_intent in {"my_inquiry"}:
+            return RouteDecision(route_type="action", intent="my_inquiry", action_name="my_inquiries", classifier="intent")
+        if hint_intent in {"my_participation"}:
+            return RouteDecision(route_type="action", intent="my_participation", action_name="my_participations", classifier="intent")
+        if hint_intent in {"my_wishlist"}:
+            return RouteDecision(route_type="action", intent="my_wishlist", action_name="my_wishlist", classifier="intent")
+        if hint_intent in {"admin_contact_prompt"}:
+            return RouteDecision(route_type="action", intent="admin_contact_help", action_name="admin_contact_help", classifier="intent")
+        if hint_intent in {"refund_policy", "refund_method", "system_login", "system_signup", "system_payment", "system_inquiry", "system_report", "system_booth", "system_mypage", "host_help"}:
+            return RouteDecision(route_type="retrieval", intent="policy", classifier="intent")
+        return RouteDecision(route_type="retrieval", intent="general", classifier="fallback")
+
+    async def _decide_route(
+        self,
+        raw_message: str,
+        *,
+        page_type: str | None,
+        history: list[dict] | None,
+        region_hint: str | None,
+        location_keywords: list[str] | None,
+    ) -> RouteDecision:
+        heuristic = self._heuristic_route(
+            raw_message,
+            page_type=page_type,
+            history=history,
+            region_hint=region_hint,
+            location_keywords=location_keywords,
         )
+        if heuristic.route_type in {"action", "recommendation"}:
+            return heuristic
+
+        semantic = await self.gemini.classify_route(
+            user_message=raw_message,
+            page_type=page_type,
+            history=history,
+        )
+        if semantic == "event_search":
+            return RouteDecision(route_type="recommendation", intent="event_search", classifier="gemini")
+        mapping = {
+            "my_status": ("action", "my_status", "my_status_summary"),
+            "my_inquiries": ("action", "my_inquiry", "my_inquiries"),
+            "my_participations": ("action", "my_participation", "my_participations"),
+            "my_wishlist": ("action", "my_wishlist", "my_wishlist"),
+            "payment": ("action", "payment", "my_payment_statuses"),
+            "refund": ("action", "refund", "my_refund_statuses"),
+            "booth": ("action", "booth", "my_booth_statuses"),
+            "admin_contact_help": ("action", "admin_contact_help", "admin_contact_help"),
+            "admin_contact_submit": ("action", "admin_contact", "submit_admin_contact"),
+            "policy": ("retrieval", "policy", None),
+            "general": ("retrieval", "general", None),
+        }
+        if semantic in mapping:
+            route_type, intent, action_name = mapping[semantic]
+            return RouteDecision(route_type=route_type, intent=intent, action_name=action_name, classifier="gemini")
+        return heuristic
 
     async def chat(
         self,
@@ -45,255 +165,19 @@ class ChatbotService:
         location_keywords: list[str] | None = None,
         filters: dict | None = None,
     ) -> ChatResponse:
+        started_at = time.perf_counter()
+        raw_message = (message or "").strip()
+
         try:
-            raw_message = (message or '').strip()
-            lowered = raw_message.lower()
+            route = await self._decide_route(
+                raw_message,
+                page_type=page_type,
+                history=history,
+                region_hint=region_hint,
+                location_keywords=location_keywords,
+            )
 
-            if lowered.startswith('관리자 문의:') or lowered.startswith('관리자문의:'):
-                if not authorization:
-                    if any(keyword in raw_message for keyword in ['로그인', '비밀번호', '비번']):
-                        reply = self._login_issue_email_guide()
-                    else:
-                        reply = '관리자 문의는 로그인한 상태에서만 접수할 수 있어요. 로그인 후 다시 보내주세요.'
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=reply,
-                        intent='admin_contact',
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=reply, cards=[], intent='admin_contact')
-
-                content = raw_message.split(':', 1)[1].strip() if ':' in raw_message else ''
-                if not content:
-                    reply = self._admin_contact_prompt()
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=reply,
-                        intent='admin_contact',
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=reply, cards=[], intent='admin_contact')
-
-                submitted = await self.spring.submit_admin_contact(
-                    session_id=session_id,
-                    content=content,
-                    authorization=authorization,
-                )
-                if not submitted:
-                    self.admin_support.save_contact(
-                        content=content,
-                        session_id=session_id,
-                        authorization=authorization,
-                    )
-                reply = '관리자 문의가 접수되었어요. 답변은 마이페이지 > 문의 내역 > AI 문의에서 확인할 수 있어요.'
-                self.admin_support.save_log(
-                    question=raw_message,
-                    answer=reply,
-                    intent='admin_contact',
-                    session_id=session_id,
-                )
-                return ChatResponse(answer=reply, cards=[], intent='admin_contact')
-
-            if '관리자' in raw_message and '문의' in raw_message:
-                if not authorization:
-                    if any(keyword in raw_message for keyword in ['로그인', '비밀번호', '비번']):
-                        reply = self._login_issue_email_guide()
-                    else:
-                        reply = '관리자 문의는 로그인한 상태에서만 접수할 수 있어요. 로그인 후 다시 이용해주세요.'
-                else:
-                    reply = self._admin_contact_prompt()
-                self.admin_support.save_log(
-                    question=raw_message,
-                    answer=reply,
-                    intent='admin_contact_help',
-                    session_id=session_id,
-                )
-                return ChatResponse(answer=reply, cards=[], intent='admin_contact_help')
-
-            intent = self.intent.detect(raw_message, page_type=page_type, history=history)
-
-            if intent in {
-                'refund_policy',
-                'refund_method',
-                'system_login',
-                'system_signup',
-                'system_payment',
-                'system_inquiry',
-                'system_mypage',
-                'system_booth',
-                'system_report',
-                'host_help',
-                'admin_contact_prompt',
-            }:
-                answer = await self.rag.answer(raw_message, intent=intent)
-                answer = answer or '관련 안내를 찾지 못했어요.'
-                self.admin_support.save_log(
-                    question=raw_message,
-                    answer=answer,
-                    intent=intent,
-                    session_id=session_id,
-                )
-                return ChatResponse(answer=answer, cards=[], intent=intent)
-
-            if intent == 'my_inquiry':
-                if not authorization:
-                    answer = '문의 내역을 보려면 로그인이 필요해요. 로그인한 상태에서 다시 말씀해 주세요.'
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-
-                try:
-                    data = await self.spring.get_my_inquiries(authorization)
-                    items = data.get('items') or data.get('content') or data.get('list') or []
-                    if not items:
-                        answer = '현재 문의 내역이 없어요.'
-                        self.admin_support.save_log(
-                            question=raw_message,
-                            answer=answer,
-                            intent=intent,
-                            session_id=session_id,
-                        )
-                        return ChatResponse(answer=answer, cards=[], intent=intent)
-
-                    lines = ['최근 문의 내역이에요.']
-                    for item in items[:3]:
-                        title = item.get('eventTitle') or item.get('title') or '행사'
-                        content = item.get('content') or item.get('inquiryContent') or '문의 내용'
-                        status = item.get('status') or item.get('answerStatus') or '상태 확인 필요'
-                        lines.append(f'- {title}: {content} ({status})')
-                    answer = '\n'.join(lines)
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-                except Exception as e:
-                    print('[MY_INQUIRY ERROR]', repr(e))
-                    answer = '문의 내역을 불러오는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                        is_error=True,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-
-            if intent == 'my_participation':
-                if not authorization:
-                    answer = '참여 내역을 보려면 로그인이 필요해요. 로그인한 상태에서 다시 말씀해 주세요.'
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-
-                try:
-                    items = await self.spring.get_my_participations(authorization)
-                    if not items:
-                        answer = '현재 참여 행사 내역이 없어요.'
-                        self.admin_support.save_log(
-                            question=raw_message,
-                            answer=answer,
-                            intent=intent,
-                            session_id=session_id,
-                        )
-                        return ChatResponse(answer=answer, cards=[], intent=intent)
-
-                    lines = ['최근 참여 행사 내역이에요.']
-                    for item in items[:3]:
-                        title = item.get('eventTitle') or item.get('title') or '행사'
-                        status = item.get('pctStatus') or item.get('status') or '상태 확인 필요'
-                        period = ' ~ '.join(
-                            [value for value in [item.get('eventStartDate'), item.get('eventEndDate')] if value]
-                        )
-                        lines.append(f"- {title}: {status}" + (f" ({period})" if period else ''))
-                    answer = '\n'.join(lines)
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-                except Exception as e:
-                    print('[MY_PARTICIPATION ERROR]', repr(e))
-                    answer = '참여 내역을 불러오는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                        is_error=True,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-
-            if intent == 'my_wishlist':
-                if not authorization:
-                    answer = '관심 행사 목록을 보려면 로그인이 필요해요. 로그인한 상태에서 다시 말씀해 주세요.'
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-
-                try:
-                    items = await self.spring.get_my_wishlist(authorization)
-                    if not items:
-                        answer = '현재 관심 행사로 저장된 항목이 없어요.'
-                        self.admin_support.save_log(
-                            question=raw_message,
-                            answer=answer,
-                            intent=intent,
-                            session_id=session_id,
-                        )
-                        return ChatResponse(answer=answer, cards=[], intent=intent)
-
-                    lines = ['최근 관심 행사 목록이에요.']
-                    for item in items[:3]:
-                        title = item.get('eventTitle') or item.get('title') or '행사'
-                        period = ' ~ '.join(
-                            [
-                                value
-                                for value in [
-                                    item.get('startDate'),
-                                    item.get('endDate'),
-                                ]
-                                if value
-                            ]
-                        )
-                        lines.append(f"- {title}" + (f" ({period})" if period else ''))
-                    answer = '\n'.join(lines)
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-                except Exception as e:
-                    print('[MY_WISHLIST ERROR]', repr(e))
-                    answer = '관심 행사 목록을 불러오는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'
-                    self.admin_support.save_log(
-                        question=raw_message,
-                        answer=answer,
-                        intent=intent,
-                        session_id=session_id,
-                        is_error=True,
-                    )
-                    return ChatResponse(answer=answer, cards=[], intent=intent)
-
-            if intent == 'recommend':
+            if route.route_type == "recommendation":
                 answer, cards = await self.recommender.recommend(
                     message=raw_message,
                     authorization=authorization,
@@ -302,33 +186,67 @@ class ChatbotService:
                     location_keywords=location_keywords,
                     filters=filters,
                 )
-                self.admin_support.save_log(
-                    question=raw_message,
-                    answer=answer,
-                    intent=intent,
+                reasons = [card.get("scoreReason") for card in cards[:3] if isinstance(card, dict) and card.get("scoreReason")]
+                next_actions = []
+                if cards:
+                    next_actions = [
+                        {"label": "상세 페이지 보기", "actionType": "navigate", "value": cards[0].get("detailUrl") or "", "variant": "primary"},
+                        {"label": "무료 행사만 추천", "actionType": "prompt", "value": "무료 행사만 추천해줘", "variant": "secondary"},
+                    ]
+                self._log(
+                    started_at=started_at,
                     session_id=session_id,
+                    page_type=page_type,
+                    intent=route.intent,
+                    route_type="recommendation",
+                    message=raw_message,
+                    answer=answer,
+                    cards=cards,
+                    sources=[],
+                    metadata={"recommendationReasons": reasons, "classifier": route.classifier},
                 )
-                return ChatResponse(answer=answer, cards=[ChatCard(**c) for c in cards], intent=intent)
+                return ChatResponse(answer=answer, cards=cards, sources=[], intent=route.intent, routeType="recommendation", recommendationReasons=reasons, nextActions=next_actions)
 
-            faq = await self.rag.answer(raw_message)
-            context = faq or 'MOHAENG는 행사 추천, 검색, 문의, 환불 안내를 지원하는 플랫폼입니다.'
-            reply = await self.gemini.generate(history or [], raw_message, context=context)
-            self.admin_support.save_log(
-                question=raw_message,
-                answer=reply,
-                intent='chat',
+            if route.route_type == "action" and route.action_name:
+                action_result = await self.action_service.dispatch(
+                    action_name=route.action_name,
+                    raw_message=raw_message,
+                    authorization=authorization,
+                    session_id=session_id,
+                    page_type=page_type,
+                )
+                self._log(
+                    started_at=started_at,
+                    session_id=session_id,
+                    page_type=page_type,
+                    intent=route.intent,
+                    route_type="action",
+                    message=raw_message,
+                    answer=action_result.answer,
+                    cards=action_result.cards,
+                    sources=[],
+                    status_code=action_result.status_code,
+                    metadata={**(action_result.metadata or {}), "classifier": route.classifier},
+                )
+                return ChatResponse(answer=action_result.answer, cards=action_result.cards, sources=[], intent=route.intent, routeType="action", recommendationReasons=action_result.recommendation_reasons, nextActions=action_result.next_actions)
+
+            retrieval = await self.retrieval.retrieve(raw_message, intent=route.intent if route.intent != "general" else None, limit=5)
+            composed = await self.answer_composer.compose_explanation(user_message=raw_message, history=history, intent=route.intent, retrieval=retrieval)
+            self._log(
+                started_at=started_at,
                 session_id=session_id,
+                page_type=page_type,
+                intent=route.intent,
+                route_type=composed.route_type,
+                message=raw_message,
+                answer=composed.answer,
+                cards=[],
+                sources=composed.sources,
+                metadata={**(composed.metadata or {}), "classifier": route.classifier},
             )
-            return ChatResponse(answer=reply, cards=[], intent='chat')
-
+            return ChatResponse(answer=composed.answer, cards=[], sources=composed.sources, intent=route.intent, routeType=composed.route_type, recommendationReasons=composed.recommendation_reasons or [], nextActions=composed.next_actions or [])
         except Exception as e:
-            print('[CHATBOT ERROR]', repr(e))
-            answer = '지금은 챗봇 응답을 준비하는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'
-            self.admin_support.save_log(
-                question=message,
-                answer=answer,
-                intent='fallback',
-                session_id=session_id,
-                is_error=True,
-            )
-            return ChatResponse(answer=answer, cards=[], intent='fallback')
+            print("[CHATBOT ERROR]", repr(e))
+            answer = "지금은 답변을 처리하는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요."
+            self._log(started_at=started_at, session_id=session_id, page_type=page_type, intent="error", route_type="error", message=raw_message, answer=answer, cards=[], sources=[], status_code=500, metadata={"error": repr(e)})
+            return ChatResponse(answer=answer, cards=[], sources=[], recommendationReasons=[], nextActions=[], intent="error", routeType="error")

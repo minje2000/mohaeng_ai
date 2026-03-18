@@ -59,6 +59,10 @@ FOLLOWUP_HINTS = {
     "관리자": "admin_contact_prompt",
 }
 
+
+EVENT_REQUEST_NOUNS = ["행사", "이벤트", "전시", "축제", "공연", "박람회", "페스티벌", "컨퍼런스"]
+EVENT_REQUEST_VERBS = ["추천", "찾", "검색", "보여", "알려", "뭐있", "있나", "가볼만", "갈만", "열리", "개최", "진행", "근처", "주변", "인근"]
+
 GENERIC_KEYWORD_TOKENS = {
     "행사", "이벤트", "추천", "추천해줘", "알려줘", "찾아줘", "보여줘", "검색", "조회", "뭐", "뭐있어",
     "있어", "열리", "열리는", "개최", "하는", "근처", "주변", "인근", "가까운", "근방", "지역", "기준",
@@ -212,6 +216,27 @@ class IntentService:
             target = self._today() + timedelta(days=1)
             return {"start": str(target), "end": str(target), "label": "내일", "strict": True, "mode": "tomorrow"}
         return None
+
+    def looks_like_event_request(self, message: str, *, page_type: str | None = None, region_hint: str | None = None, location_keywords: list[str] | None = None) -> bool:
+        raw = (message or "").strip()
+        normalized = self._normalize(raw)
+        if not normalized:
+            return False
+        if any(token in normalized for token in ["내문의", "결제상태", "환불상태", "부스상태", "관리자문의:"]):
+            return False
+        has_event_noun = any(token in normalized for token in EVENT_REQUEST_NOUNS)
+        has_request_signal = any(token in normalized for token in EVENT_REQUEST_VERBS)
+        has_region = self.extract_region(raw, region_hint=region_hint, location_keywords=location_keywords) is not None
+        has_date_hint = any(token in normalized for token in ["이번주", "주말", "이번달", "오늘", "내일"])
+        has_free_or_open = any(token in normalized for token in ["무료", "모집중", "모집중인", "신청가능", "신청가능한"])
+        has_page_hint = page_type in {"map", "calendar", "board"}
+        if has_event_noun and (has_request_signal or has_region or has_date_hint or has_free_or_open):
+            return True
+        if has_page_hint and (has_region or has_date_hint) and has_request_signal:
+            return True
+        if any(phrase in normalized for phrase in ["뭐있어", "뭐있나", "갈만한거", "가볼만한거"]) and (has_region or has_date_hint or has_event_noun):
+            return True
+        return False
 
     def build_preferences(self, message: str, *, page_type: str | None = None, region_hint: str | None = None, location_keywords: list[str] | None = None, filters: dict | None = None) -> dict:
         text = (message or "").strip()
