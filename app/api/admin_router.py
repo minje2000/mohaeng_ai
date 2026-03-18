@@ -5,9 +5,13 @@ from pydantic import BaseModel
 
 from app.core.security import verify_api_key
 from app.services.admin_support_service import AdminSupportService
+from app.services.chat_log_service import ChatLogService
+from app.services.retrieval_service import RetrievalService
 
 router = APIRouter(prefix='/ai/admin', tags=['AI Admin'], dependencies=[Depends(verify_api_key)])
 admin_support = AdminSupportService()
+chat_logs = ChatLogService()
+retrieval = RetrievalService()
 
 
 class ContactUpdateRequest(BaseModel):
@@ -49,7 +53,6 @@ async def delete_contact(item_id: str):
     return {'ok': True, 'itemId': item_id}
 
 
-
 @router.post('/contacts/{item_id}/delete')
 async def delete_contact_post(item_id: str):
     deleted = admin_support.delete_contact(item_id=item_id)
@@ -60,7 +63,14 @@ async def delete_contact_post(item_id: str):
 
 @router.get('/logs')
 async def list_logs(limit: int = 200):
-    return {
-        'summary': admin_support.summarize_logs(),
-        'items': admin_support.list_logs(limit=limit),
-    }
+    return {'summary': chat_logs.summarize(), 'items': chat_logs.list_recent(limit=limit)}
+
+
+@router.get('/retrieval/status')
+async def retrieval_status():
+    return retrieval.get_status()
+
+
+@router.post('/retrieval/rebuild')
+async def retrieval_rebuild():
+    return retrieval.rebuild_index(force=True)

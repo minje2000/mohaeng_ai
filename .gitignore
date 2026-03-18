@@ -15,3 +15,7 @@ venv/
 
 # OS files
 .DS_Store
+# AI runtime artifacts
+__pycache__/
+*.pyc
+data/chroma/

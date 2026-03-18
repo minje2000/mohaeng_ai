@@ -91,6 +91,18 @@ class SpringApiService:
         )
         return self._extract_list(data)
 
+    async def get_my_payment_statuses(self, authorization: str) -> list[dict]:
+        data = await self._get("/api/ai/status/payments", authorization=authorization)
+        return self._extract_list(data)
+
+    async def get_my_refund_statuses(self, authorization: str) -> list[dict]:
+        data = await self._get("/api/ai/status/refunds", authorization=authorization)
+        return self._extract_list(data)
+
+    async def get_my_booth_statuses(self, authorization: str) -> list[dict]:
+        data = await self._get("/api/ai/status/booths", authorization=authorization)
+        return self._extract_list(data)
+
     async def get_public_faqs(self) -> list[dict]:
         try:
             data = await self._get("/api/ai/faqs/public")
