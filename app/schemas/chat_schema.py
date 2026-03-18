@@ -30,9 +30,27 @@ class ChatCard(BaseModel):
     eventStatus: Optional[str] = None
     detailUrl: Optional[str] = None
     applyUrl: Optional[str] = None
+    scoreReason: Optional[str] = None
+
+
+class ChatSource(BaseModel):
+    type: str
+    title: str
+    snippet: str
+
+
+class ChatNextAction(BaseModel):
+    label: str
+    actionType: str
+    value: Optional[str] = None
+    variant: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
     answer: str
     cards: List[ChatCard] = []
+    sources: List[ChatSource] = []
+    recommendationReasons: List[str] = []
+    nextActions: List[ChatNextAction] = []
     intent: Optional[str] = None
+    routeType: Optional[str] = None
