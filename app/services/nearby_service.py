@@ -9,8 +9,8 @@ client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 GOOGLE_PLACES_KEY = os.getenv("GOOGLE_PLACES_API_KEY", "")
 KAKAO_REST_KEY    = os.getenv("KAKAO_REST_API_KEY", "")
 
-DRIVE_15MIN_RADIUS   = 12000  # 차로 15분 ≒ 12km
-TRANSIT_15MIN_RADIUS =  5000  # 버스/도보 15분 ≒ 5km
+DRIVE_15MIN_RADIUS   = 8000  # 차로 8km
+TRANSIT_15MIN_RADIUS =  3000  # 버스/도보 3km
 TRANSIT_FALLBACK_RADIUS = 10000  # 주변에 없을 때 확장 반경
 
 def get_season_info(date_str: Optional[str]) -> str:
