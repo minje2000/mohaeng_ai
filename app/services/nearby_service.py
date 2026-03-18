@@ -1,5 +1,6 @@
 import os
 import json
+import math
 import httpx
 from typing import Optional
 from openai import AsyncOpenAI
@@ -12,6 +13,16 @@ KAKAO_REST_KEY    = os.getenv("KAKAO_REST_API_KEY", "")
 DRIVE_15MIN_RADIUS   = 8000  # 차로 8km
 TRANSIT_15MIN_RADIUS =  3000  # 버스/도보 3km
 TRANSIT_FALLBACK_RADIUS = 10000  # 주변에 없을 때 확장 반경
+
+
+def _haversine_km(lat1, lng1, lat2, lng2) -> float:
+    """두 좌표 간 직선 거리 (km) 계산"""
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng/2)**2
+    return R * 2 * math.asin(math.sqrt(a))
+
 
 def get_season_info(date_str: Optional[str]) -> str:
     """행사 날짜로 계절 + 날씨 특성 반환"""
@@ -195,6 +206,12 @@ async def generate_travel_course(req: NearbyRequest) -> NearbyResponse:
         enrich_with_kakao_urls(attractions_raw),
     )
 
+    # 행사 위치 기준 직선 거리 필터링 (차량 6km / 도보 2km)
+    max_km = 2.0 if req.transport == "도보" else 6.0
+    restaurants = [p for p in restaurants if _haversine_km(req.latitude, req.longitude, p["lat"], p["lng"]) <= max_km]
+    cafes       = [p for p in cafes       if _haversine_km(req.latitude, req.longitude, p["lat"], p["lng"]) <= max_km]
+    attractions = [p for p in attractions if _haversine_km(req.latitude, req.longitude, p["lat"], p["lng"]) <= max_km]
+
     def fmt_places(places: list[dict], label: str) -> str:
         if not places:
             return f"{label}: 정보 없음"
@@ -277,11 +294,34 @@ async def generate_travel_course(req: NearbyRequest) -> NearbyResponse:
     )
 
     raw = gpt_res.choices[0].message.content.strip()
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    parsed = json.loads(raw.strip())
+
+    # 코드블록 제거
+    if "```" in raw:
+        parts = raw.split("```")
+        for part in parts:
+            part = part.strip()
+            if part.startswith("json"):
+                part = part[4:].strip()
+            if part.startswith("{"):
+                raw = part
+                break
+
+    # JSON 부분만 추출 ({ } 사이)
+    try:
+        start = raw.index("{")
+        end = raw.rindex("}") + 1
+        raw = raw[start:end]
+    except ValueError:
+        pass
+
+    try:
+        parsed = json.loads(raw.strip())
+    except json.JSONDecodeError:
+        return NearbyResponse(
+            summary="코스 생성에 실패했어요. 다시 시도해주세요.",
+            companion=req.companion,
+            course=[],
+        )
 
     # 장소 매핑 — 카카오 상세 URL + 좌표 주입
     all_places = {p["place_name"]: p for p in restaurants + cafes + attractions}
@@ -302,14 +342,19 @@ async def generate_travel_course(req: NearbyRequest) -> NearbyResponse:
                 continue
             restaurant_count += 1
 
+        # 축제 항목이면 행사 주소 + 카카오맵 링크 주입
+        if item.get("category") == "축제" and req.festival_address:
+            item["address"] = req.festival_address
+            item["kakao_url"] = f"https://map.kakao.com/link/search/{req.festival_address}"
+
         matched = all_places.get(item.get("place_name"))
         if matched:
             item["lat"]       = matched["lat"]
             item["lng"]       = matched["lng"]
             item["address"]   = item.get("address") or matched["address"]
-            item["kakao_url"] = matched["kakao_url"]   # 카카오 상세 페이지 URL
+            item["kakao_url"] = item.get("kakao_url") or matched["kakao_url"]
         elif item.get("lat") and item.get("lng"):
-            item["kakao_url"] = f"https://map.kakao.com/link/map/{item['place_name']},{item['lat']},{item['lng']}"
+            item["kakao_url"] = item.get("kakao_url") or f"https://map.kakao.com/link/map/{item['place_name']},{item['lat']},{item['lng']}"
 
         course_items.append(CourseItem(**item))
 
