@@ -246,7 +246,20 @@ class RecommendationService:
             return f"{prefs['region'].get('alias') or prefs['region'].get('name')} 기준으로 맞는 행사를 찾지 못했어요. 지역을 조금 넓혀서 다시 찾아볼까요?"
         return "조건에 맞는 행사를 아직 찾지 못했어요. 지역이나 일정 조건을 조금 바꿔서 다시 물어봐 주세요."
 
-    async def recommend(self, *, message: str, authorization: str | None = None, page_type: str | None = None, region_hint: str | None = None, location_keywords: list[str] | None = None, filters: dict | None = None) -> Tuple[str, List[dict]]:
+    async def recommend(
+        self,
+        *,
+        message: str,
+        authorization: str | None = None,
+        page_type: str | None = None,
+        region_hint: str | None = None,
+        location_keywords: list[str] | None = None,
+        filters: dict | None = None,
+    ) -> Tuple[str, List[dict]]:
+        import time
+
+        start = time.perf_counter()
+
         prefs = self.intent.build_preferences(
             message,
             page_type=page_type,
@@ -254,18 +267,30 @@ class RecommendationService:
             location_keywords=location_keywords,
             filters=filters,
         )
+        prefs_t = time.perf_counter()
+
         user_context = await self._build_user_context(authorization)
+        user_context_t = time.perf_counter()
+
         candidates = await self._collect_candidates(prefs=prefs, authorization=authorization)
+        retrieval_t = time.perf_counter()
 
         cards = [self._normalize_card(item) for item in candidates or []]
+        normalize_t = time.perf_counter()
+
         scored_cards = []
         strict_date = bool((prefs.get("date_range") or {}).get("strict"))
         explicit_region = prefs.get("region") is not None
+
         for card in cards:
             score, reasons = self._score_card(card, prefs=prefs, user_context=user_context)
             if score <= -999:
                 continue
-            if explicit_region and not self._match_region(card.get("region", ""), prefs["region"].get("name", ""), prefs["region"].get("alias")):
+            if explicit_region and not self._match_region(
+                card.get("region", ""),
+                prefs["region"].get("name", ""),
+                prefs["region"].get("alias"),
+            ):
                 continue
             if prefs.get("open_only") and card.get("eventStatus") != "행사참여모집중":
                 continue
@@ -276,14 +301,33 @@ class RecommendationService:
             card["scoreReason"] = ", ".join((reasons or ["조건 기반 추천"])[:3])
             scored_cards.append((score, card))
 
+        score_t = time.perf_counter()
+
         if not scored_cards and not strict_date and not explicit_region:
-            relaxed = [self._normalize_card(item) for item in await self.spring.search_events(keyword=prefs.get("keyword"), hide_closed=True, size=36)]
+            relaxed = [
+                self._normalize_card(item)
+                for item in await self.spring.search_events(
+                    keyword=prefs.get("keyword"),
+                    hide_closed=True,
+                    size=36,
+                )
+            ]
+            relaxed_t = time.perf_counter()
+
             for card in relaxed:
                 if prefs.get("open_only") and card.get("eventStatus") != "행사참여모집중":
                     continue
-                score, reasons = self._score_card(card, prefs={**prefs, "date_range": None}, user_context=user_context)
+                score, reasons = self._score_card(
+                    card,
+                    prefs={**prefs, "date_range": None},
+                    user_context=user_context,
+                )
                 card["scoreReason"] = ", ".join((reasons or ["조건 완화 추천"])[:3])
                 scored_cards.append((score, card))
+            relaxed_score_t = time.perf_counter()
+        else:
+            relaxed_t = score_t
+            relaxed_score_t = score_t
 
         unique = {}
         for score, card in sorted(scored_cards, key=lambda item: item[0], reverse=True):
@@ -292,10 +336,26 @@ class RecommendationService:
                 continue
             card.pop("raw", None)
             unique[key] = card
-            if len(unique) >= 8:
+            if len(unique) >= 3:   # 8 -> 3
                 break
 
         final_cards = list(unique.values())
+        post_t = time.perf_counter()
+
+        print(
+            f"[RECOMMEND TIMING] "
+            f"prefs={prefs_t - start:.3f}s "
+            f"user={user_context_t - prefs_t:.3f}s "
+            f"retrieval={retrieval_t - user_context_t:.3f}s "
+            f"normalize={normalize_t - retrieval_t:.3f}s "
+            f"score={score_t - normalize_t:.3f}s "
+            f"relaxed_fetch={relaxed_t - score_t:.3f}s "
+            f"relaxed_score={relaxed_score_t - relaxed_t:.3f}s "
+            f"gemini=0.000s "
+            f"post={post_t - relaxed_score_t:.3f}s "
+            f"total={post_t - start:.3f}s"
+        )
+
         if not final_cards:
             return self._empty_answer(prefs), []
 
@@ -308,5 +368,6 @@ class RecommendationService:
             reason_parts.append("신청 가능 우선")
         if prefs.get("prefer_free"):
             reason_parts.append("무료 우선")
+
         lead = " / ".join(reason_parts) if reason_parts else "현재 조건 기준"
         return f"{lead}으로 조건에 맞는 행사들을 골라봤어요.", final_cards

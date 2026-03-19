@@ -132,7 +132,7 @@ class ActionService:
 
     async def search_events(self, *, raw_message: str) -> ActionExecutionResult:
         keyword = self._extract_search_keyword(raw_message)
-        items = await self.spring.search_events(keyword=keyword, page=0, size=6)
+        items = await self.spring.search_events(keyword=keyword, page=0, size=3)
         if not items:
             return ActionExecutionResult(
                 answer="조건에 맞는 행사를 찾지 못했어요. 지역이나 키워드를 조금 바꿔서 다시 말씀해 주세요.",
@@ -211,7 +211,7 @@ class ActionService:
         items = await self.spring.get_my_wishlist(authorization)
         if not items:
             return ActionExecutionResult(answer="현재 관심 행사 목록이 비어 있어요.", action_name="get_my_wishlist", metadata={"itemCount": 0}, next_actions=self._default_next_actions())
-        cards = [self._build_event_card(item, default_title="관심 행사") for item in items[:4]]
+        cards = [self._build_event_card(item, default_title="관심 행사") for item in items[:3]]
         return ActionExecutionResult(answer="최근 관심 행사 목록이에요. 카드에서 바로 다시 확인할 수 있어요.", cards=cards, action_name="get_my_wishlist", metadata={"itemCount": len(items)}, next_actions=[ChatNextAction(label="관심 기반 추천", actionType="prompt", value="내 관심 행사 기준으로 추천해줘", variant="primary")])
 
     async def get_my_payment_statuses(self, *, authorization: str | None) -> ActionExecutionResult:

@@ -166,6 +166,7 @@ class ChatbotService:
         filters: dict | None = None,
     ) -> ChatResponse:
         started_at = time.perf_counter()
+        debug_start = time.perf_counter()
         raw_message = (message or "").strip()
 
         try:
@@ -176,6 +177,7 @@ class ChatbotService:
                 region_hint=region_hint,
                 location_keywords=location_keywords,
             )
+            route_t = time.perf_counter()
 
             if route.route_type == "recommendation":
                 answer, cards = await self.recommender.recommend(
@@ -186,6 +188,8 @@ class ChatbotService:
                     location_keywords=location_keywords,
                     filters=filters,
                 )
+                recommend_t = time.perf_counter()
+
                 reasons = [card.get("scoreReason") for card in cards[:3] if isinstance(card, dict) and card.get("scoreReason")]
                 next_actions = []
                 if cards:
@@ -193,6 +197,15 @@ class ChatbotService:
                         {"label": "상세 페이지 보기", "actionType": "navigate", "value": cards[0].get("detailUrl") or "", "variant": "primary"},
                         {"label": "무료 행사만 추천", "actionType": "prompt", "value": "무료 행사만 추천해줘", "variant": "secondary"},
                     ]
+                post_t = time.perf_counter()
+
+                print(
+                    f"[CHAT TIMING] route={route_t - debug_start:.3f}s "
+                    f"recommend={recommend_t - route_t:.3f}s "
+                    f"post={post_t - recommend_t:.3f}s "
+                    f"total={post_t - debug_start:.3f}s"
+                )
+
                 self._log(
                     started_at=started_at,
                     session_id=session_id,
@@ -205,7 +218,15 @@ class ChatbotService:
                     sources=[],
                     metadata={"recommendationReasons": reasons, "classifier": route.classifier},
                 )
-                return ChatResponse(answer=answer, cards=cards, sources=[], intent=route.intent, routeType="recommendation", recommendationReasons=reasons, nextActions=next_actions)
+                return ChatResponse(
+                    answer=answer,
+                    cards=cards,
+                    sources=[],
+                    intent=route.intent,
+                    routeType="recommendation",
+                    recommendationReasons=reasons,
+                    nextActions=next_actions,
+                )
 
             if route.route_type == "action" and route.action_name:
                 action_result = await self.action_service.dispatch(
@@ -215,6 +236,16 @@ class ChatbotService:
                     session_id=session_id,
                     page_type=page_type,
                 )
+                action_t = time.perf_counter()
+                post_t = time.perf_counter()
+
+                print(
+                    f"[CHAT TIMING] route={route_t - debug_start:.3f}s "
+                    f"action={action_t - route_t:.3f}s "
+                    f"post={post_t - action_t:.3f}s "
+                    f"total={post_t - debug_start:.3f}s"
+                )
+
                 self._log(
                     started_at=started_at,
                     session_id=session_id,
@@ -228,10 +259,40 @@ class ChatbotService:
                     status_code=action_result.status_code,
                     metadata={**(action_result.metadata or {}), "classifier": route.classifier},
                 )
-                return ChatResponse(answer=action_result.answer, cards=action_result.cards, sources=[], intent=route.intent, routeType="action", recommendationReasons=action_result.recommendation_reasons, nextActions=action_result.next_actions)
+                return ChatResponse(
+                    answer=action_result.answer,
+                    cards=action_result.cards,
+                    sources=[],
+                    intent=route.intent,
+                    routeType="action",
+                    recommendationReasons=action_result.recommendation_reasons,
+                    nextActions=action_result.next_actions,
+                )
 
-            retrieval = await self.retrieval.retrieve(raw_message, intent=route.intent if route.intent != "general" else None, limit=5)
-            composed = await self.answer_composer.compose_explanation(user_message=raw_message, history=history, intent=route.intent, retrieval=retrieval)
+            retrieval = await self.retrieval.retrieve(
+                raw_message,
+                intent=route.intent if route.intent != "general" else None,
+                limit=5,
+            )
+            retrieval_t = time.perf_counter()
+
+            composed = await self.answer_composer.compose_explanation(
+                user_message=raw_message,
+                history=history,
+                intent=route.intent,
+                retrieval=retrieval,
+            )
+            gemini_t = time.perf_counter()
+            post_t = time.perf_counter()
+
+            print(
+                f"[CHAT TIMING] route={route_t - debug_start:.3f}s "
+                f"retrieval={retrieval_t - route_t:.3f}s "
+                f"gemini={gemini_t - retrieval_t:.3f}s "
+                f"post={post_t - gemini_t:.3f}s "
+                f"total={post_t - debug_start:.3f}s"
+            )
+
             self._log(
                 started_at=started_at,
                 session_id=session_id,
@@ -244,9 +305,38 @@ class ChatbotService:
                 sources=composed.sources,
                 metadata={**(composed.metadata or {}), "classifier": route.classifier},
             )
-            return ChatResponse(answer=composed.answer, cards=[], sources=composed.sources, intent=route.intent, routeType=composed.route_type, recommendationReasons=composed.recommendation_reasons or [], nextActions=composed.next_actions or [])
+            return ChatResponse(
+                answer=composed.answer,
+                cards=[],
+                sources=composed.sources,
+                intent=route.intent,
+                routeType=composed.route_type,
+                recommendationReasons=composed.recommendation_reasons or [],
+                nextActions=composed.next_actions or [],
+            )
         except Exception as e:
             print("[CHATBOT ERROR]", repr(e))
             answer = "지금은 답변을 처리하는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요."
-            self._log(started_at=started_at, session_id=session_id, page_type=page_type, intent="error", route_type="error", message=raw_message, answer=answer, cards=[], sources=[], status_code=500, metadata={"error": repr(e)})
-            return ChatResponse(answer=answer, cards=[], sources=[], recommendationReasons=[], nextActions=[], intent="error", routeType="error")
+            self._log(
+                started_at=started_at,
+                session_id=session_id,
+                page_type=page_type,
+                intent="error",
+                route_type="error",
+                message=raw_message,
+                answer=answer,
+                cards=[],
+                sources=[],
+                status_code=500,
+                metadata={"error": repr(e)},
+            )
+            return ChatResponse(
+                answer=answer,
+                cards=[],
+                sources=[],
+                recommendationReasons=[],
+                nextActions=[],
+                intent="error",
+                routeType="error",
+            )
+            
