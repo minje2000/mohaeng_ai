@@ -1,5 +1,14 @@
 FROM python:3.11-slim
 
+# timezone 설정에 필요한 패키지 설치
+RUN apt-get update && apt-get install -y tzdata
+
+ENV TZ=Asia/Seoul
+
+# 시스템 시간 기준을 한국으로 변경
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone
+
 # 작업 디렉토리 생성
 WORKDIR /app
 
