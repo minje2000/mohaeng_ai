@@ -86,7 +86,8 @@ AI가 분석한 위험도 점수를 기반으로 관리자 검수 여부를 판�
 
 또한 JWT 기반 사용자 인증과 내부 API Key 인증을 적용하여 서비스 보안을 강화하였습니다.
 
-<img width="1083" alt="AI Service Architecture" src="여기에_아키텍처_이미지_URL_삽입" />
+<img width="1720" height="886" alt="AI 아키텍쳐" src="https://github.com/user-attachments/assets/6bac816b-09f0-4afd-aa31-bf27f440a29f" />
+
 
 ---
 
